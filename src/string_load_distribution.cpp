@@ -1,4 +1,4 @@
-#include "include/string_load_distribution.h"
+#include "../include/string_load_distribution.h"
 
 namespace str_dstrb {
 
@@ -50,22 +50,28 @@ namespace str_dstrb {
         }
 
         ldouble& l = end;
-        ldouble divider = T0*T0*l*l;
+//        ldouble divider = T0*T0*l*l;
+//        if(xi <= x){
+//            return ((l-xi)*(l-x)*xi*xi*xi/3.0 +
+//                    (l-x)*xi*(l*(x*x - xi*xi)/2.0 - (x*x*x - xi*xi*xi)/3.0) +
+//                    xi*x*((l*l*l - x*x*x)/3.0 - l*l*x + l*x*x))/divider;
+//        }else if(x <= xi){
+//            return ((l-xi)*(l-x)*x*x*x/3.0 +
+//                    (l-xi)*x*(l*(xi*xi-x*x)/2.0 - (xi*xi*xi - x*x*x)/3.0) +
+//                    xi*x*((l*l*l - xi*xi*xi)/3.0 - l*l*xi + l*xi*xi))/divider;
+//        }else{
+//            throw CalculateError("Ошибка вычислений ");
+//        }
+        ldouble divider = T0*T0*l;
         if(xi <= x){
-            return ((l-xi)*(l-x)*xi*xi*xi/3.0 +
-                    (l-x)*xi*(l*(x*x - xi*xi)/2.0 - (x*x*x - xi*xi*xi)/3.0) +
-                    xi*x*((l*l*l - x*x*x)/3.0 - l*l*x + l*x*x))/divider;
+            return xi*(l-x)*(2.0*l*x - xi*xi-x*x)/(6.0*divider);
         }else if(x <= xi){
-            return ((l-xi)*(l-x)*x*x*x/3.0 +
-                    (l-xi)*x*(l*(xi*xi-x*x)/2.0 - (xi*xi*xi - x*x*x)/3.0) +
-                    xi*x*((l*l*l - xi*xi*xi)/3.0 - l*l*xi + l*xi*xi))/divider;
+            return x*(l-xi)*(2.0*l*xi - xi*xi-x*x)/(6.0*divider);
         }else{
             throw CalculateError("Ошибка вычислений ");
         }
     }
 
-    // TODO Tests
-    // Вычисляет отклонение от положения равновесия
     ldouble СalculateDeviationFromEquilibrium(ldouble x, Points<ldouble> p,
                                              ldouble T0 , ldouble begin, ldouble end){
         size_t size = p.x.size();

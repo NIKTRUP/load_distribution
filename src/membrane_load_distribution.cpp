@@ -1,4 +1,4 @@
-#include "include/membrane_load_distribution.h"
+#include "../include/membrane_load_distribution.h"
 
 namespace membrane_dstrb {
 
@@ -6,42 +6,36 @@ namespace membrane_dstrb {
         ldouble СalculateDeviationFromEquilibrium(ldouble x, ldouble y, Points<ldouble> p,
                                                   size_t M, size_t N, ldouble eps_x, ldouble eps_y,
                                                   ldouble end_x, ldouble end_y, bool set_limit){
-            const size_t & a = end_x,  // по строкам: x -> b
-                         & b = end_y; // по столбцам: y -> a
-
-            ldouble pi_4 = M_PI*M_PI*M_PI*M_PI,
-                    mul = 4.0/(pi_4*b*a),
-                    hy = p.y[1] - p.y[0],
+            ldouble hy = p.y[1] - p.y[0],
                     hx = p.x[1] - p.x[0];
             ldouble u = 0.0;
 
             auto G_ = [&](ldouble xj, ldouble yi){
                 if(set_limit){
-                    return membrane_dstrb::G(xj, yi, x, y, a, b, M, N);
+                    return membrane_dstrb::G(x, y, xj, yi, end_x, end_y, M, N);
                 }else{
-                    return membrane_dstrb::G(xj, yi, x, y, a, b, eps_x, eps_y);
+                    return membrane_dstrb::G(x, y, xj, yi, end_x, end_y, eps_x, eps_y);
                 }
             };
 
             for(size_t i = 0; i < p.y.size(); ++i){
                 for(size_t j = 0; j < p.x.size(); ++j){
-                    u += G_(p.x[j], p.y[i])*p.z[j][i]*hy*hx;
+                    u += G_(p.x[j], p.y[i])*p.z[i][j]*hy*hx;
                 }
             }
-            u *= mul;
             return  u;
         }
 
         std::vector<std::vector<ldouble>> CalculateU(const Points<ldouble> p, size_t M, size_t N, ldouble eps_x,
-                                                     ldouble eps_y, size_t end_x, size_t end_y, bool set_limit){
+                                                     ldouble eps_y, ldouble end_x, ldouble end_y, bool set_limit){
 
             size_t size_x = p.x.size(), size_y = p.y.size();
             std::vector<std::vector<ldouble>> u(size_y + 2, std::vector<ldouble>(size_x + 2));
             ldouble hx = p.x[1] - p.x[0],
                     hy = p.y[1] - p.y[0];
-            u[0] = std::vector<ldouble>(size_x + 2, 0);
+            u.front() = std::vector<ldouble>(size_x + 2, 0);
             for(size_t i = 1 ; i < size_y + 1; ++i){
-                u[i][0] = 0;
+                u[i].front() = 0;
                 for(size_t j = 1; j < size_x + 1 ; ++j){
                     u[i][j] = membrane_dstrb::detail::СalculateDeviationFromEquilibrium(p.x[j - 1], p.y[i - 1], p, M, N,
                                                                                         eps_x, eps_y, end_x, end_y, set_limit)*hx*hy;
@@ -266,13 +260,18 @@ namespace membrane_dstrb {
     }
 
     std::vector<std::vector<ldouble>> CalculateU(const Points<ldouble> p, size_t M,
-                                                 size_t N, size_t end_x, size_t end_y){
+                                                 size_t N, ldouble end_x, ldouble end_y){
         return detail::CalculateU(p, M, N, 0.0, 0.0, end_x, end_y, true);
     }
 
     std::vector<std::vector<ldouble>> CalculateU(const Points<ldouble> p, ldouble eps_x,
-                                                 ldouble eps_y, size_t end_x, size_t end_y){
+                                                 ldouble eps_y, ldouble end_x, ldouble end_y){
         return detail::CalculateU(p, 0, 0, eps_x, eps_y, end_x, end_y, false);
+    }
+
+    std::vector<std::vector<ldouble>> CalculateU(const Points<ldouble> p, ldouble eps,
+                                                 ldouble end_x, ldouble end_y){
+        return detail::CalculateU(p, 0, 0, eps, eps, end_x, end_y, false);
     }
 
     std::vector<std::vector<ldouble>> FillP(std::vector<ldouble>& b, size_t size_x, size_t size_y){

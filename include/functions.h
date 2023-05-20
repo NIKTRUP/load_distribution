@@ -13,8 +13,7 @@
 #include <limits>
 #include <iomanip>
 #include <iostream>
-#include "include/write.h"
-
+#include "write.h"
 
 using ldouble = long double;
 using namespace std::literals;
@@ -94,9 +93,9 @@ void Triangulation(Matrix& matrix, Vector& b){
         for (size_t i= k + 1; i < size ; ++i) {
             auto mul = matrix[i][k]/matrix[k][k];
             for (size_t j=k+1; j < size ; ++j) {
-                matrix[i][j] = matrix[i][j] - matrix[k][j]*mul;
+                matrix[i][j] -= matrix[k][j]*mul;
             }
-            b[i]=b[i]-b[k]*mul;
+            b[i] -= b[k]*mul;
         }
     }
 }
@@ -105,7 +104,13 @@ void Triangulation(Matrix& matrix, Vector& b){
 template <typename Matrix, typename  Vector>
 void SolveGauss(Matrix& matrix, Vector& b) {
     size_t size = matrix.size();
-    Triangulation(matrix, b);
+    try {
+        Triangulation(matrix, b);
+    } catch (...) {
+        WriteSLAE(matrix, b, "slae_no_solution");
+        throw CalculateError(" Решение получить невозможно ");
+    }
+    WriteSLAE(matrix, b, "slae_no_solution");
 
     b[size - 1] = b[size - 1]/matrix[size - 1][size - 1];
     for (size_t i = 0; i < size - 1; ++i) {
@@ -116,4 +121,34 @@ void SolveGauss(Matrix& matrix, Vector& b) {
         b[k] /= matrix[k][k];
     }
 }
+
+// Вычисляеет метрику MSE.
+template<typename Iterator>
+ldouble MSE(Iterator begin_x, Iterator end_x, Iterator begin_y, Iterator end_y){
+    if(std::distance(begin_y, end_y) < std::distance(begin_x, end_x)){
+        throw ArgumentError("Ошибка в размере входных параметров: std::distance(begin_y, end_y) < std::distance(begin_x, end_x)");
+    }
+
+    ldouble sum = 0;
+    for(auto it_x = begin_x, it_y = begin_y; it_x < end_x; ++it_x, ++it_y){
+        double loss = (*it_x - *it_y);
+        sum += loss * loss;
+    }
+    return sum / std::distance(begin_x, end_x);
+}
+
+// Вычисляеет метрику MAE.
+template<typename Iterator>
+ldouble MAE(Iterator begin_x, Iterator end_x, Iterator begin_y, Iterator end_y){
+    if(std::distance(begin_y, end_y) < std::distance(begin_x, end_x)){
+        throw ArgumentError("Ошибка в размере входных параметров: std::distance(begin_y, end_y) < std::distance(begin_x, end_x)");
+    }
+
+    ldouble sum = 0;
+    for(auto it_x = begin_x, it_y = begin_y; it_x < end_x; ++it_x, ++it_y){
+        sum += std::abs(*it_x - *it_y);
+    }
+    return sum / std::distance(begin_x, end_x);
+}
+
 #endif // FUNCTIONS_H

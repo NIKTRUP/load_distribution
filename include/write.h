@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "include/membrane_load_distribution.h"
+#include "../include/membrane_load_distribution.h"
 
 // сохраняет логи в csv формате
 template <typename Container, typename Linspace>
